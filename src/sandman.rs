@@ -1,8 +1,10 @@
+use std::fmt::format;
 use crate::backup::backup;
 use crate::sha::{
     generate_shas, get_ignore, get_prior_shas, get_sha_diff, merge_diff_old, write_file_shas,
     ShaFile,
 };
+use crate::config::Config;
 use clap::Parser;
 use clap_derive::Parser;
 
@@ -31,26 +33,41 @@ struct Args {
     with_config: bool,
 }
 
+// Break the upload functionality into it's own function
+
 pub async fn run_sandman() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let mut current_file_shas = ShaFile::new();
+    if args.with_config{
+        let config_string: String = tokio::fs::read_to_string("./sandman_config.toml").await.unwrap();
+        let config: Config = toml::from_str(&config_string).unwrap();
 
-    let ignore_file_path = if args.ignore_file.is_empty() {
-        format!("{}/{}", args.local_directory, ".sandmanignore")
-    } else {
-        args.ignore_file.clone()
-    };
+        Ok(for directory in config.directories.backups {
+            let mut current_file_shas: ShaFile = ShaFile::new();
+            let ignore_file_path = format!("{}/{}", directory.directory, "./sandmanignore");
+            let ignore = get_ignore(&ignore_file_path);
+            generate_shas(directory.directory, &mut current_file_shas, &ignore);
 
-    let ignore = get_ignore(&ignore_file_path);
-    generate_shas(args.local_directory, &mut current_file_shas, &ignore);
+        })
+    }
+    else {
+        let mut current_file_shas = ShaFile::new();
+        let ignore_file_path = if args.ignore_file.is_empty() {
+            format!("{}/{}", args.local_directory, ".sandmanignore")
+        } else {
+            args.ignore_file.clone()
+        };
 
-    let old_file_shas = get_prior_shas(args.sha_file.clone());
-    let diff = get_sha_diff(&old_file_shas, current_file_shas);
-    let merged = merge_diff_old(old_file_shas, &diff);
+        let ignore = get_ignore(&ignore_file_path);
+        generate_shas(args.local_directory, &mut current_file_shas, &ignore);
 
-    write_file_shas(&merged, args.sha_file);
-    backup(diff, args.s3_bucket, args.bucket_prefix).await?;
+        let old_file_shas = get_prior_shas(args.sha_file.clone());
+        let diff = get_sha_diff(&old_file_shas, current_file_shas);
+        let merged = merge_diff_old(old_file_shas, &diff);
 
-    Ok(())
+        write_file_shas(&merged, args.sha_file);
+        backup(diff, args.s3_bucket, args.bucket_prefix).await?;
+
+        Ok(())
+    }
 }

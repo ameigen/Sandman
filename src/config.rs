@@ -1,27 +1,27 @@
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
-struct Config {
+pub struct Config {
     title: String,
-    aws: AwsConfig,
-    directories: DirectoriesConfig
+    pub aws: AwsConfig,
+    pub directories: DirectoriesConfig
 }
 
 #[derive(Deserialize, Debug)]
 struct AwsConfig {
-    aws_access_key_id: String,
-    aws_default_region: String,
-    aws_secret_access_key: String
+    pub aws_access_key_id: String,
+    pub aws_default_region: String,
+    pub aws_secret_access_key: String
 }
 
 #[derive(Deserialize, Debug)]
 struct DirectoriesConfig {
-    backups: Vec<SandmanDirectory>
+    pub backups: Vec<SandmanDirectory>
 }
 
 #[derive(Deserialize, Debug)]
 struct SandmanDirectory {
-    directory: String,
-    prefix: String,
-    bucket: String,
+    pub directory: String,
+    pub prefix: String,
+    pub bucket: String,
 }
