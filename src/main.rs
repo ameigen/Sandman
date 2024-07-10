@@ -1,10 +1,10 @@
+use serde::Deserialize;
+
 mod backup;
 mod sandman;
 mod sha;
+mod config;
 
-/*
-    TO DO: Add config file parsing
- */
 #[tokio::main]
 async fn main() {
     let _ = sandman::run_sandman().await;

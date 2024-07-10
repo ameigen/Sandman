@@ -33,6 +33,7 @@ struct Args {
 
 pub async fn run_sandman() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+
     let mut current_file_shas = ShaFile::new();
 
     let ignore_file_path = if args.ignore_file.is_empty() {
