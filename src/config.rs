@@ -1,27 +1,59 @@
+use async_trait::async_trait;
+use rusoto_credential::{AwsCredentials, CredentialsError, ProvideAwsCredentials};
 use serde::Deserialize;
 
+/// Main configuration struct for the application.
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    title: String,
+    /// AWS configuration details.
     pub aws: AwsConfig,
-    pub directories: DirectoriesConfig
+
+    /// Directories configuration details.
+    pub directories: DirectoriesConfig,
 }
 
-#[derive(Deserialize, Debug)]
-struct AwsConfig {
+/// AWS configuration details.
+#[derive(Deserialize, Debug, Clone)]
+pub struct AwsConfig {
+    /// AWS access key ID.
     pub aws_access_key_id: String,
+
+    /// AWS default region.
     pub aws_default_region: String,
-    pub aws_secret_access_key: String
+
+    /// AWS secret access key.
+    pub aws_secret_access_key: String,
 }
 
-#[derive(Deserialize, Debug)]
-struct DirectoriesConfig {
-    pub backups: Vec<SandmanDirectory>
+/// Implementation of the `ProvideAwsCredentials` trait for `AwsConfig`.
+#[async_trait]
+impl ProvideAwsCredentials for AwsConfig {
+    async fn credentials(&self) -> Result<AwsCredentials, CredentialsError> {
+        Ok(AwsCredentials::new(
+            self.aws_access_key_id.clone(),
+            self.aws_secret_access_key.clone(),
+            None,
+            None,
+        ))
+    }
 }
 
+/// Configuration for directories to be backed up.
 #[derive(Deserialize, Debug)]
-struct SandmanDirectory {
+pub struct DirectoriesConfig {
+    /// List of directories to be backed up.
+    pub backups: Vec<SandmanDirectory>,
+}
+
+/// Details of a directory to be backed up.
+#[derive(Deserialize, Debug)]
+pub struct SandmanDirectory {
+    /// Path to the directory.
     pub directory: String,
+
+    /// S3 bucket prefix for the backup.
     pub prefix: String,
+
+    /// S3 bucket name for the backup.
     pub bucket: String,
 }

@@ -1,9 +1,8 @@
-use serde::Deserialize;
 
 mod backup;
+mod config;
 mod sandman;
 mod sha;
-mod config;
 
 #[tokio::main]
 async fn main() {
