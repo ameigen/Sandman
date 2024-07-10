@@ -9,14 +9,14 @@ use log::error;
 
 /// Struct representing SHA file information with a map of file paths to SHA values and a timestamp.
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone)]
-pub struct ShaFile {
-    pub files: HashMap<String, String>,
-    pub timestamp: u128,
+pub (crate) struct ShaFile {
+    pub (crate) files: HashMap<String, String>,
+    pub (crate) timestamp: u128,
 }
 
 impl ShaFile {
     /// Creates a new `ShaFile` instance with the current timestamp.
-    pub fn new() -> Self {
+    pub (crate) fn new() -> Self {
         let start = SystemTime::now();
         let timestamp = start
             .duration_since(UNIX_EPOCH)
@@ -37,7 +37,7 @@ impl ShaFile {
 /// * `directory` - The directory to scan for files.
 /// * `sha_file` - A mutable reference to a `ShaFile` to store the hashes.
 /// * `ignore_list` - A list of file patterns to ignore.
-pub fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_list: &[String]) {
+pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_list: &[String]) {
     let paths = match fs::read_dir(directory) {
         Ok(paths) => paths,
         Err(e) => {
@@ -95,7 +95,7 @@ pub fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_list: &[S
 /// # Returns
 ///
 /// A `ShaFile` instance with the previously stored SHA information.
-pub fn get_prior_shas(sha_location: &String) -> ShaFile {
+pub(crate) fn get_prior_shas(sha_location: &String) -> ShaFile {
     match fs::read_to_string(sha_location) {
         Ok(json) => serde_json::from_str(&json).expect("Unable to deserialize ShaFile"),
         Err(e) => {
@@ -115,7 +115,7 @@ pub fn get_prior_shas(sha_location: &String) -> ShaFile {
 /// # Returns
 ///
 /// A `ShaFile` containing the differences in SHA values.
-pub fn get_sha_diff(old: &ShaFile, new: ShaFile) -> ShaFile {
+pub(crate) fn get_sha_diff(old: &ShaFile, new: ShaFile) -> ShaFile {
     let mut diff = ShaFile::new();
 
     for (k, v) in &new.files {
@@ -137,7 +137,7 @@ pub fn get_sha_diff(old: &ShaFile, new: ShaFile) -> ShaFile {
 /// # Returns
 ///
 /// A `ShaFile` with the merged SHA values.
-pub fn merge_diff_old(mut old: ShaFile, new: &ShaFile) -> ShaFile {
+pub(crate) fn merge_diff_old(mut old: ShaFile, new: &ShaFile) -> ShaFile {
     for (k, v) in &new.files {
         old.files.insert(k.clone(), v.clone());
     }
@@ -150,7 +150,7 @@ pub fn merge_diff_old(mut old: ShaFile, new: &ShaFile) -> ShaFile {
 ///
 /// * `shas` - The `ShaFile` containing SHA information.
 /// * `output_path` - The file path to write the SHA file to.
-pub fn write_file_shas(shas: &ShaFile, output_path: &String) {
+pub(crate) fn write_file_shas(shas: &ShaFile, output_path: &String) {
     let shas_json = serde_json::to_string_pretty(shas).expect("Failed to serialize ShaFile");
     fs::write(output_path, shas_json).expect("Failed to write ShaFile");
 }
@@ -164,7 +164,7 @@ pub fn write_file_shas(shas: &ShaFile, output_path: &String) {
 /// # Returns
 ///
 /// A vector of strings representing the file patterns to ignore.
-pub fn get_ignore(ignore_path: &str) -> Vec<String> {
+pub(crate) fn get_ignore(ignore_path: &str) -> Vec<String> {
     if PathBuf::from(ignore_path).is_file() {
         let content = fs::read_to_string(ignore_path).expect("Failed to read ignore file");
         content

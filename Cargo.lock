@@ -1056,28 +1056,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_backup"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "chrono",
- "clap",
- "clap_derive",
- "env_logger",
- "log",
- "rusoto_core",
- "rusoto_credential",
- "rusoto_s3",
- "rusoto_sqs",
- "serde",
- "serde_json",
- "sha2 0.9.9",
- "sha256",
- "tokio",
- "toml",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1110,6 +1088,28 @@ name = "ryu"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
+
+[[package]]
+name = "sandman"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "clap",
+ "clap_derive",
+ "env_logger",
+ "log",
+ "rusoto_core",
+ "rusoto_credential",
+ "rusoto_s3",
+ "rusoto_sqs",
+ "serde",
+ "serde_json",
+ "sha2 0.10.8",
+ "sha256",
+ "tokio",
+ "toml",
+]
 
 [[package]]
 name = "schannel"

@@ -22,7 +22,7 @@ use tokio::io::AsyncReadExt;
 /// # Returns
 ///
 /// A `Result` which is `Ok` if the backup was successful, or an error if it failed.
-pub async fn backup(
+pub(crate) async fn backup(
     diff: ShaFile,
     bucket: String,
     bucket_directory: String,

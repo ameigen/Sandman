@@ -50,7 +50,7 @@ struct Args {
 /// * `bucket` - S3 bucket name for backup.
 /// * `bucket_prefix` - S3 bucket prefix for backup.
 /// * `aws_config` - Optional AWS configuration.
-async fn gather_sandman(
+async fn gather(
     local_directory: String,
     ignore_file_path: String,
     bucket: String,
@@ -73,7 +73,7 @@ async fn gather_sandman(
 }
 
 /// Main entry point for running the Sandman application.
-pub async fn run_sandman() {
+pub(crate) async fn run_sandman() {
     let args = Args::parse();
     if args.verbosity {
         env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
@@ -90,7 +90,7 @@ pub async fn run_sandman() {
         for directory in config.directories.backups {
             let aws_config: AwsConfig = config.aws.clone();
             let ignore_file_path = format!("{}/.sandmanignore", directory.directory);
-            gather_sandman(
+            gather(
                 directory.directory,
                 ignore_file_path,
                 directory.bucket,
@@ -105,7 +105,7 @@ pub async fn run_sandman() {
         } else {
             args.ignore_file.clone()
         };
-        gather_sandman(
+        gather(
             args.local_directory,
             ignore_file_path,
             args.s3_bucket,

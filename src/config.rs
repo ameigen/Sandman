@@ -4,25 +4,25 @@ use serde::Deserialize;
 
 /// Main configuration struct for the application.
 #[derive(Deserialize, Debug)]
-pub struct Config {
+pub (crate) struct Config {
     /// AWS configuration details.
-    pub aws: AwsConfig,
+    pub (crate) aws: AwsConfig,
 
     /// Directories configuration details.
-    pub directories: DirectoriesConfig,
+    pub (crate) directories: DirectoriesConfig,
 }
 
 /// AWS configuration details.
 #[derive(Deserialize, Debug, Clone)]
-pub struct AwsConfig {
+pub(crate) struct AwsConfig {
     /// AWS access key ID.
-    pub aws_access_key_id: String,
+    pub (crate) aws_access_key_id: String,
 
     /// AWS default region.
-    pub aws_default_region: String,
+    pub (crate) aws_default_region: String,
 
     /// AWS secret access key.
-    pub aws_secret_access_key: String,
+    pub (crate) aws_secret_access_key: String,
 }
 
 /// Implementation of the `ProvideAwsCredentials` trait for `AwsConfig`.
@@ -40,20 +40,20 @@ impl ProvideAwsCredentials for AwsConfig {
 
 /// Configuration for directories to be backed up.
 #[derive(Deserialize, Debug)]
-pub struct DirectoriesConfig {
+pub (crate) struct DirectoriesConfig {
     /// List of directories to be backed up.
-    pub backups: Vec<SandmanDirectory>,
+    pub (crate) backups: Vec<SandmanDirectory>,
 }
 
 /// Details of a directory to be backed up.
 #[derive(Deserialize, Debug)]
-pub struct SandmanDirectory {
+pub (crate) struct SandmanDirectory {
     /// Path to the directory.
-    pub directory: String,
+    pub (crate) directory: String,
 
     /// S3 bucket prefix for the backup.
-    pub prefix: String,
+    pub (crate) prefix: String,
 
     /// S3 bucket name for the backup.
-    pub bucket: String,
+    pub (crate) bucket: String,
 }
