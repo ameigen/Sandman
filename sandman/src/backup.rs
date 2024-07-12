@@ -1,8 +1,8 @@
-use log::debug;
-use log::error;
 use crate::config::AwsConfig;
 use crate::sha::ShaFile;
 use chrono::prelude::*;
+use log::debug;
+use log::error;
 use rusoto_core::{HttpClient, Region};
 use rusoto_s3::{PutObjectRequest, S3Client, StreamingBody, S3};
 use std::error::Error;
@@ -35,8 +35,8 @@ pub(crate) async fn backup(
     let client = match credentials {
         None => S3Client::new(Region::UsEast1),
         Some(credentials) => {
-            let region: Region = Region::from_str(&credentials.aws_default_region)
-                .expect("Invalid region string");
+            let region: Region =
+                Region::from_str(&credentials.aws_default_region).expect("Invalid region string");
             S3Client::new_with(HttpClient::new().unwrap(), credentials, region)
         }
     };

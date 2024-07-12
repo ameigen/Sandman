@@ -41,12 +41,17 @@ pub(crate) struct GatherArgs {
 }
 
 impl GatherArgs {
-    pub(crate) fn new(local_directory: String, ignore_file: String, bucket: String, bucket_prefix: String) -> GatherArgs {
-        GatherArgs{
+    pub(crate) fn new(
+        local_directory: String,
+        ignore_file: String,
+        bucket: String,
+        bucket_prefix: String,
+    ) -> GatherArgs {
+        GatherArgs {
             local_directory,
             ignore_file,
             bucket,
-            bucket_prefix
+            bucket_prefix,
         }
     }
 }

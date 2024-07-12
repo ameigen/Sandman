@@ -1,9 +1,8 @@
-
+mod args;
 mod backup;
-mod config;
+pub mod config;
 mod sandman;
 mod sha;
-mod args;
 
 #[tokio::main]
 async fn main() {

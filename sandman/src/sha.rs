@@ -1,3 +1,4 @@
+use log::error;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -5,18 +6,17 @@ use std::fs;
 use std::path::PathBuf;
 use std::string::String;
 use std::time::{SystemTime, UNIX_EPOCH};
-use log::error;
 
 /// Struct representing SHA file information with a map of file paths to SHA values and a timestamp.
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone)]
-pub (crate) struct ShaFile {
-    pub (crate) files: HashMap<String, String>,
-    pub (crate) timestamp: u128,
+pub(crate) struct ShaFile {
+    pub(crate) files: HashMap<String, String>,
+    pub(crate) timestamp: u128,
 }
 
 impl ShaFile {
     /// Creates a new `ShaFile` instance with the current timestamp.
-    pub (crate) fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let start = SystemTime::now();
         let timestamp = start
             .duration_since(UNIX_EPOCH)
