@@ -1,9 +1,10 @@
-use iced::widget::{button, container, row, scrollable, text, text_input, Column};
+use iced::Padding;
+use iced::widget::{button, container, row, column, scrollable, text, text_input, Column};
 use iced::{alignment, Element, Length, Sandbox};
 use sandman_share::config::SandmanDirectory;
 
 #[derive(Clone, Debug)]
-enum Inputs {
+pub enum Inputs {
     AccessKey,
     Region,
     SecretAccessKey,
@@ -16,7 +17,7 @@ enum Inputs {
 pub enum Message {
     InputChanged(Inputs, String),
     Submitted,
-    DeleteItem(usize),
+    DeleteItem,
 }
 
 pub struct SandmanConfigApp {
@@ -91,7 +92,7 @@ impl Sandbox for SandmanConfigApp {
                 };
                 self.directories.push(dir);
             }
-            Message::DeleteItem(_) => {}
+            Message::DeleteItem => {}
         }
     }
 
@@ -177,13 +178,13 @@ fn item_list_view(items: &Vec<SandmanDirectory>) -> Element<'static, Message> {
         .into()
 }
 
-fn directory(index: usize, value: &SandmanDirectory) -> Element<'static, Message> {
+fn directory(_index: usize, value: &SandmanDirectory) -> Element<'static, Message> {
     row!(
         text(format!(
             "{} {} {}",
             value.bucket, value.bucket, value.directory
         )),
-        button("Delete").on_press(Message::DeleteItem(index))
+        button("Delete").on_press(Message::DeleteItem)
     )
     .align_items(iced::Alignment::Center)
     .spacing(30)
