@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "sandman",
-    "sandman-config"
-, "sandman-share"]
+    "sandman-config",
+    "sandman-share"
+]
