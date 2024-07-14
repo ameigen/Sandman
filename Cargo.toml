@@ -2,4 +2,4 @@
 members = [
     "sandman",
     "sandman-config"
-]
+, "sandman-share"]

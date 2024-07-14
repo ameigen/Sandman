@@ -1,13 +1,17 @@
 use crate::args::{Args, GatherArgs};
 use crate::backup::backup;
-use crate::config::{AwsConfig, Config};
 use crate::sha::{
-    generate_shas, get_ignore, get_prior_shas, get_sha_diff, merge_diff_old, write_file_shas,
+    generate_shas, get_prior_shas, get_sha_diff, merge_diff_old, write_file_shas,
     ShaFile,
 };
 use clap::Parser;
 use env_logger;
+use sandman_share::config::{AwsConfig, Config};
 use std::fs;
+
+pub const SANDMAN_HISTORY: &str = ".sandman_history";
+pub const SANDMAN_CONFIG: &str = ".sandman_config.toml";
+pub const SANDMAN_IGNORE: &str = ".sandmanignore";
 
 /// Gathers and processes SHA files, and performs backup.
 ///
@@ -17,12 +21,13 @@ use std::fs;
 /// * `aws_config` - Optional AWS configuration.
 async fn gather(gather_args: GatherArgs, aws_config: Option<AwsConfig>) {
     let mut current_file_shas: ShaFile = ShaFile::new();
-    let sha_location: String = format!("{}/.file_shas", gather_args.local_directory);
-    let ignored_names: Vec<String> = get_ignore(&gather_args.ignore_file);
+    let sha_location: String = format!("{}/.{}", gather_args.local_directory, SANDMAN_HISTORY);
+    let ignore_file: gitignore::File =
+        gitignore::File::new(gather_args.ignore_file.as_ref()).unwrap();
     generate_shas(
         gather_args.local_directory,
         &mut current_file_shas,
-        &ignored_names,
+        &ignore_file,
     );
 
     let old_file_shas: ShaFile = get_prior_shas(&sha_location);
@@ -40,10 +45,10 @@ async fn gather(gather_args: GatherArgs, aws_config: Option<AwsConfig>) {
     .unwrap()
 }
 
-/// Opens and processes the sandman_config.toml file into a `Config` struct
+/// Opens and processes the `sandman_config.toml` file into a `Config` struct
 fn get_config() -> Config {
-    let config_string: String = fs::read_to_string("../sandman_config.toml")
-        .unwrap_or_else(|_e| panic!("Error while processing sandman_config.toml"));
+    let config_string: String = fs::read_to_string(format!("./{}", SANDMAN_CONFIG))
+        .unwrap_or_else(|_e| panic!("Error while processing .sandman_config.toml"));
     toml::from_str(&config_string).unwrap()
 }
 
@@ -59,7 +64,7 @@ pub(crate) async fn run_sandman() {
         let config: Config = get_config();
         for directory in config.directories.backups {
             let aws_config: AwsConfig = config.aws.clone();
-            let ignore_file_path = format!("{}/.sandmanignore", directory.directory);
+            let ignore_file_path = format!("{}/{}", directory.directory, SANDMAN_IGNORE);
             let gather_args: GatherArgs = GatherArgs::new(
                 directory.directory,
                 ignore_file_path,
@@ -70,7 +75,7 @@ pub(crate) async fn run_sandman() {
         }
     } else {
         let ignore_file_path = if args.ignore_file.is_empty() {
-            format!("{}/.sandmanignore", args.local_directory)
+            format!("{}/{}", args.local_directory, SANDMAN_IGNORE)
         } else {
             args.ignore_file.clone()
         };

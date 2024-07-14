@@ -1,10 +1,10 @@
-use crate::config::AwsConfig;
 use crate::sha::ShaFile;
 use chrono::prelude::*;
 use log::debug;
 use log::error;
 use rusoto_core::{HttpClient, Region};
 use rusoto_s3::{PutObjectRequest, S3Client, StreamingBody, S3};
+use sandman_share::config::AwsConfig;
 use std::error::Error;
 use std::str::FromStr;
 use tokio::fs::File;

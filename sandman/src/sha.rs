@@ -1,3 +1,4 @@
+use gitignore::Error;
 use log::error;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -37,7 +38,11 @@ impl ShaFile {
 /// * `directory` - The directory to scan for files.
 /// * `sha_file` - A mutable reference to a `ShaFile` to store the hashes.
 /// * `ignore_list` - A list of file patterns to ignore.
-pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_list: &[String]) {
+pub(crate) fn generate_shas(
+    directory: String,
+    sha_file: &mut ShaFile,
+    ignore_file: &gitignore::File,
+) {
     let paths = match fs::read_dir(directory) {
         Ok(paths) => paths,
         Err(e) => {
@@ -63,12 +68,19 @@ pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_li
             }
         };
 
-        if ignore_list.iter().any(|ignore| path_str.contains(ignore)) {
-            continue;
+        match ignore_file.is_excluded(&*path) {
+            Ok(is_excluded) => {
+                if is_excluded {
+                    continue;
+                };
+            }
+            Err(e) => {
+                error!("Error checking path against ignore file {}", e);
+            }
         }
 
         if path.is_dir() {
-            generate_shas(path_str, sha_file, ignore_list);
+            generate_shas(path_str, sha_file, ignore_file);
         } else {
             let bytes = match fs::read(&path) {
                 Ok(bytes) => bytes,
@@ -153,25 +165,4 @@ pub(crate) fn merge_diff_old(mut old: ShaFile, new: &ShaFile) -> ShaFile {
 pub(crate) fn write_file_shas(shas: &ShaFile, output_path: &String) {
     let shas_json = serde_json::to_string_pretty(shas).expect("Failed to serialize ShaFile");
     fs::write(output_path, shas_json).expect("Failed to write ShaFile");
-}
-
-/// Retrieves the list of files to ignore from the specified ignore file path.
-///
-/// # Arguments
-///
-/// * `ignore_path` - The file path to the ignore file.
-///
-/// # Returns
-///
-/// A vector of strings representing the file patterns to ignore.
-pub(crate) fn get_ignore(ignore_path: &str) -> Vec<String> {
-    if PathBuf::from(ignore_path).is_file() {
-        let content = fs::read_to_string(ignore_path).expect("Failed to read ignore file");
-        content
-            .lines()
-            .map(|line| line.trim_end_matches('\r').to_string())
-            .collect()
-    } else {
-        Vec::new()
-    }
 }

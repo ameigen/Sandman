@@ -6,15 +6,6 @@ A simple Rust backed AWS S3 Backup Client
 
 <div align="left">
 
----
-## Features
-
-* Features 1
-* Features 2
-* Features 3
-* Features 4
-* Features 5
----
 
 ## Overview
 
@@ -23,11 +14,30 @@ A simple Rust backed AWS S3 Backup Client
 * Overview 3
 * Overview 4
 * Overview 5
-----
 
-## Configuration Files
+---
+## Features
 
-----
+---
+
+### Per Directory Ignore File
+
+Supports the use of `.gitignore` style ignore files in the form of a `.sandmanignore` file. This file should be placed
+in the root of any directory that is intended to be backed up. The struct of this file should match the exact spec of 
+the standard `.gitignore` file
+
+```markdown
+/target
+/.git
+/.idea
+*.txt
+```
+
+### Sandman Config
+
+Sandman makes use of a `.sandman_config.toml` file to designate the directories to be backed up as well as any AWS 
+credentials required to perform the uploads.
+
 Configuration of Sandman can be performed manually with a `sandman_config.toml` file defined as follows.
 
 ```toml
@@ -50,5 +60,4 @@ You can also make use of the `sandman-config` utility to modify it via a GUI
 sandman-config
 ```
 ---
-
 </div>

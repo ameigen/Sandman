@@ -1,6 +1,5 @@
 mod args;
 mod backup;
-pub mod config;
 mod sandman;
 mod sha;
 

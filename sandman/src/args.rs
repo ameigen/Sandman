@@ -46,7 +46,7 @@ impl GatherArgs {
         ignore_file: String,
         bucket: String,
         bucket_prefix: String,
-    ) -> GatherArgs {
+    ) -> Self {
         GatherArgs {
             local_directory,
             ignore_file,

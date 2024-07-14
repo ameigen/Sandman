@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sandman = {path = "../sandman"}
+sandman-share = {path = "../sandman-share"}
 iced = {version = "0.12.1", features = ["default"]}
