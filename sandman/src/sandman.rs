@@ -52,14 +52,19 @@ fn get_config() -> Config {
     toml::from_str(&config_string).unwrap()
 }
 
-/// Main entry point for running the Sandman application.
-pub(crate) async fn run_sandman() {
-    let args = Args::parse();
-    if args.verbosity {
+/// Use the `verbosity` parameter of the `args` struct to determine the level of our logger.
+fn set_loggers(verbosity: bool) {
+    if verbosity {
         env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
     } else {
         env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     }
+}
+
+/// Main entry point for running the Sandman application.
+pub(crate) async fn run_sandman() {
+    let args = Args::parse();
+    set_loggers(args.verbosity);
     if args.with_config {
         let config: Config = get_config();
         for directory in config.directories.backups {
