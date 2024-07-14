@@ -3,7 +3,7 @@
 # Sandman
 A simple Rust backed AWS S3 Backup Client
 
-![example workflow](https://github.com/ameigen/Sandman/actions/workflows/rust.yml/badge.svg)
+[![Rust Build](https://github.com/ameigen/Sandman/actions/workflows/rust.yml/badge.svg)](https://github.com/ameigen/Sandman/actions/workflows/rust.yml)
 </div>
 
 <div align="left">
