@@ -1,5 +1,4 @@
-use iced::Padding;
-use iced::widget::{button, container, row, column, scrollable, text, text_input, Column};
+use iced::widget::{button, column, container, row, scrollable, text, text_input, Column};
 use iced::{alignment, Element, Length, Sandbox};
 use sandman_share::config::SandmanDirectory;
 

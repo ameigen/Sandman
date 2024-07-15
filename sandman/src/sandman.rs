@@ -1,17 +1,41 @@
 use crate::args::{Args, GatherArgs};
 use crate::backup::backup;
 use crate::sha::{
-    generate_shas, get_prior_shas, get_sha_diff, merge_diff_old, write_file_shas,
-    ShaFile,
+    generate_shas, get_prior_shas, get_sha_diff, merge_diff_old, write_file_shas, ShaFile,
 };
 use clap::Parser;
 use env_logger;
+use ignore::gitignore::Gitignore;
+use ignore::Error;
+use log::error;
 use sandman_share::config::{AwsConfig, Config};
 use std::fs;
 
 pub const SANDMAN_HISTORY: &str = ".sandman_history";
 pub const SANDMAN_CONFIG: &str = ".sandman_config.toml";
 pub const SANDMAN_IGNORE: &str = ".sandmanignore";
+
+/// Creates a `Gitignore` file matcher from the provided path. If an error occurs it will
+/// return a default match accepting any and all files
+///
+/// # Arguments
+///
+/// * `path` - String of the path to the `.sandmanignore` file
+///
+/// # Returns
+///
+/// `Gitignore` - glob matcher
+fn get_ignore(path: String) -> Gitignore {
+    let ignore_result: (Gitignore, Option<Error>) = Gitignore::new(path);
+    let ignore_error: Option<Error> = ignore_result.1;
+    match ignore_error {
+        None => ignore_result.0,
+        Some(e) => {
+            error!("Error processing ignore file: {}", e);
+            Gitignore::empty()
+        }
+    }
+}
 
 /// Gathers and processes SHA files, and performs backup.
 ///
@@ -21,13 +45,12 @@ pub const SANDMAN_IGNORE: &str = ".sandmanignore";
 /// * `aws_config` - Optional AWS configuration.
 async fn gather(gather_args: GatherArgs, aws_config: Option<AwsConfig>) {
     let mut current_file_shas: ShaFile = ShaFile::new();
-    let sha_location: String = format!("{}/.{}", gather_args.local_directory, SANDMAN_HISTORY);
-    let ignore_file: gitignore::File =
-        gitignore::File::new(gather_args.ignore_file.as_ref()).unwrap();
+    let sha_location: String = format!("{}/{}", gather_args.local_directory, SANDMAN_HISTORY);
+    let ignore: Gitignore = get_ignore(gather_args.ignore_file);
     generate_shas(
-        gather_args.local_directory,
+        gather_args.local_directory.clone(),
         &mut current_file_shas,
-        &ignore_file,
+        &ignore,
     );
 
     let old_file_shas: ShaFile = get_prior_shas(&sha_location);
