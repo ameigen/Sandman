@@ -25,7 +25,7 @@ A simple Rust backed AWS S3 Backup Client
 ### Per Directory Ignore File
 
 Supports the use of `.gitignore` style ignore files in the form of a `.sandmanignore` file. This file should be placed
-in the root of any directory that is intended to be backed up. The struct of this file should match the exact spec of 
+in the root of any directory that is intended to be backed up. The struct of this file should match the exact spec of
 the standard `.gitignore` file
 
 ```markdown
@@ -37,7 +37,7 @@ the standard `.gitignore` file
 
 ### Sandman Config
 
-Sandman makes use of a `.sandman_config.toml` file to designate the directories to be backed up as well as any AWS 
+Sandman makes use of a `.sandman_config.toml` file to designate the directories to be backed up as well as any AWS
 credentials required to perform the uploads.
 
 Configuration of Sandman can be performed manually with a `sandman_config.toml` file defined as follows.
@@ -64,3 +64,34 @@ sandman-config
 ```
 ---
 </div>
+
+### Example
+
+#### Project Hierarchy
+```markdown
+backup_2/
+├─ .sandmanignore
+├─ foo.txt
+backup_1/
+├─ .sandmanignore
+├─ backup_1_directory/
+│  ├─ foo.txt
+│  ├─ bar.txt
+```
+
+#### Sandman Configuration
+```toml
+title = "Example Sandman Config"
+
+[aws]
+aws_access_key_id = "AWS_ACCESS_KEY_ID"
+aws_default_region = "DEFAULT_REGION"
+aws_secret_access_key = "AWS_SECRET_ACCESS_KEY"
+
+[directories]
+# While relative directories !WILL! work you should prefer the use of absolute directories
+backups = [
+    {directory="./backup_2", prefix="NightlyBackup2", bucket="SandmanBucket"},
+    {directory="./backup_1", prefix="NightlyBackup1", bucket="SandmanBucket"}
+]
+```
