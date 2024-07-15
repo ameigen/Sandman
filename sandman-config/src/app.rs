@@ -1,5 +1,5 @@
 use iced::widget::{button, column, container, row, scrollable, text, text_input, Column};
-use iced::{alignment, Element, Length, Sandbox};
+use iced::{alignment, Element, Length, Sandbox, Padding};
 use sandman_share::config::SandmanDirectory;
 
 #[derive(Clone, Debug)]
