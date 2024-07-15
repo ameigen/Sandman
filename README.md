@@ -51,6 +51,7 @@ aws_default_region = "DEFAULT_REGION"
 aws_secret_access_key = "AWS_SECRET_ACCESS_KEY"
 
 [directories]
+# While relative directories !WILL! work you should prefer the use of absolute directories
 backups = [
     {directory="DIRECTORY_HERE", prefix="PREFIX_NAME", bucket="BUCKET_NAME"},
 ]

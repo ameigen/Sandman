@@ -1,3 +1,5 @@
+use ignore::gitignore::Gitignore;
+use ignore::Match;
 use log::error;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -35,12 +37,8 @@ impl ShaFile {
 ///
 /// * `directory` - The directory to scan for files.
 /// * `sha_file` - A mutable reference to a `ShaFile` to store the hashes.
-/// * `ignore_list` - A list of file patterns to ignore.
-pub(crate) fn generate_shas(
-    directory: String,
-    sha_file: &mut ShaFile,
-    ignore_file: &gitignore::File,
-) {
+/// * `ignore_pattern` - A list of file patterns to ignore.
+pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_file: &Gitignore) {
     let paths = match fs::read_dir(directory) {
         Ok(paths) => paths,
         Err(e) => {
@@ -66,18 +64,14 @@ pub(crate) fn generate_shas(
             }
         };
 
-        match ignore_file.is_excluded(&*path) {
-            Ok(is_excluded) => {
-                if is_excluded {
-                    continue;
-                };
-            }
-            Err(e) => {
-                error!("Error checking path against ignore file {}", e);
-            }
+        let is_dir: bool = path.is_dir();
+
+        match ignore_file.matched(&*path, is_dir) {
+            Match::Ignore(_) => continue,
+            _ => {}
         }
 
-        if path.is_dir() {
+        if is_dir {
             generate_shas(path_str, sha_file, ignore_file);
         } else {
             let bytes = match fs::read(&path) {
