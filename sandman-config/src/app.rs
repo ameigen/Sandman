@@ -133,12 +133,12 @@ impl Sandbox for SandmanConfigApp {
 
 fn entry_with_title(
     title: &str,
-    default: &String,
+    default: &str,
     set_callback: fn(String) -> Message,
 ) -> Element<'static, Message> {
     row!(
         text(format!("{}:", title)),
-        text_input(default, default).on_input(move |value| set_callback(value)),
+        text_input(default, default).on_input(set_callback),
     )
     .align_items(iced::Alignment::Start)
     .spacing(30)
@@ -146,9 +146,9 @@ fn entry_with_title(
 }
 
 fn directory_entry(
-    directory: &String,
-    prefix: &String,
-    bucket: &String,
+    directory: &str,
+    prefix: &str,
+    bucket: &str,
 ) -> Element<'static, Message> {
     container::Container::new(
         row!(
@@ -162,12 +162,12 @@ fn directory_entry(
     .into()
 }
 
-fn item_list_view(items: &Vec<SandmanDirectory>) -> Element<'static, Message> {
+fn item_list_view(items: &[SandmanDirectory]) -> Element<'static, Message> {
     let mut column = Column::new()
         .spacing(20)
         .align_items(iced::Alignment::Center)
         .width(Length::Fill);
-    for (index, value) in items.into_iter().enumerate() {
+    for (index, value) in items.iter().enumerate() {
         column = column.push(directory(index, value));
     }
 

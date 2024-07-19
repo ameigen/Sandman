@@ -67,10 +67,7 @@ pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_fi
 
         let is_dir: bool = path.is_dir();
 
-        match ignore_file.matched(&*path, is_dir) {
-            Match::Ignore(_) => continue,
-            _ => {}
-        }
+        if let Match::Ignore(_) = ignore_file.matched(&*path, is_dir) { continue; }
 
         if is_dir {
             generate_shas(path_str, sha_file, ignore_file);

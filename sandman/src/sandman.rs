@@ -4,7 +4,6 @@ use crate::sha::{
     generate_shas, get_prior_shas, get_sha_diff, merge_diff_old, write_file_shas, ShaFile,
 };
 use clap::Parser;
-use env_logger;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use log::{error, info};
 use sandman_share::config::{AwsConfig, Config};
@@ -56,11 +55,11 @@ async fn gather(gather_args: &GatherArgs, aws_config: Option<AwsConfig>) {
         &ignore,
     );
 
-    let old_file_shas: ShaFile = get_prior_shas(&sha_location);
+    let old_file_shas: ShaFile = get_prior_shas(sha_location);
     let sha_diff: ShaFile = get_sha_diff(&old_file_shas, current_file_shas);
     let merged_shas: ShaFile = merge_diff_old(old_file_shas, &sha_diff);
 
-    write_file_shas(&merged_shas, &sha_location);
+    write_file_shas(&merged_shas, sha_location);
     backup(sha_diff, gather_args, aws_config).await.unwrap()
 }
 

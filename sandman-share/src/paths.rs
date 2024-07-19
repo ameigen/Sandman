@@ -5,7 +5,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub fn config_dir<'a>() -> OsString {
+pub fn config_dir() -> OsString {
     if let Some(project_directories) = ProjectDirs::from("", "", "Sandman") {
         return OsString::from(project_directories.config_dir());
     }
