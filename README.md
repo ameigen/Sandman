@@ -18,6 +18,39 @@ A simple Rust backed AWS S3 Backup Client
 * Overview 5
 
 ---
+## Building
+
+```shell
+git clone https://github.com/ameigen/Sandman.git
+
+# Build only the Sandman executable
+cd ./sandman/sandman
+cargo build
+
+# Build only the Sandman configuration tool
+cd ./sandman/sandman-config
+cargo build
+```
+
+
+---
+## Running
+
+```shell
+# Run the Sandman application
+cd ./sandman/sandman
+
+#Run with .sandman_config.toml in the same directory
+cargo run -- --with-config
+
+#Run with CLI arguments
+cargo run -- --local-directory "backup_path" --sha-file "location of diff" --ignore-file ".sandmanignore file" --bucket-prefix "prefix to prepend to s3 upload"
+
+# Run the Sandman Configuration Tool
+cd ./sandman/sandman-config
+cargo run
+```
+---
 ## Features
 
 ---
