@@ -145,55 +145,6 @@ async fn with_cli_args(args: Args) {
 pub(crate) async fn run_sandman() {
     let args = Args::parse();
     set_loggers(args.verbosity);
-    if args.with_config { with_external_config(args).await; }
-    else { with_cli_args(args).await; }
-/// Runs Sandman with an external `.sandman_config.toml` file passed with `Args`. If the path does
-/// not exist or was left blank it will check in the default system location. In the case of the
-/// directory or file not existing it will be created and the application will exit.
-///
-/// # Arguments
-///
-/// * `args` - `Args` used to get the configuration path
-async fn with_external_config(args: Args) {
-    verify_config_existence();
-    let config: Config = get_config(args.config_path);
-    for directory in config.directories.backups {
-        let aws_config: AwsConfig = config.aws.clone();
-        let ignore_file_path = format!("{}/{}", directory.directory, SANDMAN_IGNORE);
-        let gather_args: GatherArgs = GatherArgs::new(
-            directory.directory,
-            ignore_file_path,
-            directory.bucket,
-            directory.prefix,
-        );
-        gather(gather_args, Some(aws_config)).await;
-    }
-}
-
-/// Runs Sandman with provided CLI arguments in the form of an `Args` struct
-///
-/// # Arguments
-///
-/// * `args` - `Args` built from the CLI parameters
-async fn with_cli_args(args: Args) {
-    let ignore_file_path = if args.ignore_file.is_empty() {
-        format!("{}/{}", args.local_directory, SANDMAN_IGNORE)
-    } else {
-        args.ignore_file.clone()
-    };
-    let gather_args: GatherArgs = GatherArgs::new(
-        args.local_directory,
-        ignore_file_path,
-        args.s3_bucket,
-        args.bucket_prefix,
-    );
-    gather(gather_args, None).await;
-}
-
-/// Main entry point for running the Sandman application.
-pub(crate) async fn run_sandman() {
-    let args = Args::parse();
-    set_loggers(args.verbosity);
     if args.with_config {
         with_external_config(args).await;
     } else {
