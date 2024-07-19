@@ -74,7 +74,7 @@ cd ./sandman/sandman
 cargo run -- --with-config
 
 #Run with CLI arguments
-cargo run -- --local-directory "backup_path" --sha-file "location of diff" --ignore-file ".sandmanignore file" --bucket-prefix "prefix to prepend to s3 upload"
+cargo run -- --local-directory "backup_path" --sha-file "location of diff" --bucket-prefix "prefix to prepend to s3 upload"
 
 # Run the Sandman Configuration Tool
 cd ./sandman/sandman-config
