@@ -27,11 +27,6 @@ A simple Rust backed AWS S3 Backup Client
     - **Description:** Specifies the S3 bucket name for backup.
     - **Default Value:** An empty string.
 
-- **File Path for Ignore Patterns**
-    - **Flag:** `--ignore-file`
-    - **Description:** Specifies the file path for ignore patterns.
-    - **Default Value:** An empty string.
-
 - **S3 Bucket Prefix for Backup**
     - **Flag:** `--bucket-prefix`
     - **Description:** Specifies the S3 bucket prefix for backup.
