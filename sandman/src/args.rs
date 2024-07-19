@@ -31,6 +31,9 @@ pub(crate) struct Args {
     /// Flag to indicate if configuration file should be used.
     #[arg(long, default_value_t = false)]
     pub(crate) with_config: bool,
+
+    #[arg(long, default_value_t = String::new())]
+    pub(crate) config_path: String,
 }
 
 pub(crate) struct GatherArgs {

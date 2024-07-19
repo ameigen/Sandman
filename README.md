@@ -8,15 +8,50 @@ A simple Rust backed AWS S3 Backup Client
 
 <div align="left">
 
+### Command Line Arguments
 
-## Overview
+----
+```markdown
+- **Local Directory to Process**
+    - **Flag:** `--local-directory`
+    - **Description:** Specifies the local directory to process.
+    - **Default Value:** An empty string.
 
-* Overview 1
-* Overview 2
-* Overview 3
-* Overview 4
-* Overview 5
+- **File Path to Store SHA File**
+    - **Flag:** `--sha-file`
+    - **Description:** Specifies the file path where the SHA file will be stored.
+    - **Default Value:** An empty string.
 
+- **S3 Bucket Name for Backup**
+    - **Flag:** `--s3-bucket`
+    - **Description:** Specifies the S3 bucket name for backup.
+    - **Default Value:** An empty string.
+
+- **File Path for Ignore Patterns**
+    - **Flag:** `--ignore-file`
+    - **Description:** Specifies the file path for ignore patterns.
+    - **Default Value:** An empty string.
+
+- **S3 Bucket Prefix for Backup**
+    - **Flag:** `--bucket-prefix`
+    - **Description:** Specifies the S3 bucket prefix for backup.
+    - **Default Value:** An empty string.
+
+- **Verbosity Flag for Logging**
+    - **Flags:** `-v`, `--verbosity`
+    - **Description:** Increases the verbosity of logging.
+    - **Default Value:** `false` (verbosity off).
+
+- **Flag to Indicate if Configuration File Should be Used**
+    - **Flag:** `--with-config`
+    - **Description:** Indicates whether a configuration file should be used.
+    - **Default Value:** `false` (configuration file not used).
+
+- **Configuration File Path**
+    - **Flag:** `--config-path`
+    - **Description:** Specifies the path to the configuration file.
+    - **Default Value:** An empty string.
+```
 ---
 ## Building
 
@@ -75,6 +110,7 @@ credentials required to perform the uploads.
 
 Configuration of Sandman can be performed manually with a `sandman_config.toml` file defined as follows.
 
+
 ```toml
 title = "Sandman Config"
 
@@ -95,6 +131,15 @@ You can also make use of the `sandman-config` utility to modify it via a GUI
 ```shell
 sandman-config
 ```
+If no `--config-path` parameter is passed Sandman will check in an OS dependent default location which follows
+```
+Windows - C:\\Users\\%USERNAME%\\AppData\\Roaming\\Sandman\\config
+Unix - $HOME/$USER/.config/Sandman/config
+```
+
+On first runtime (with the `--with-config` flag set) and if no configuration file has been provided the application will create the default directory and
+exit, prompting the modify the `sandman_config.toml` as needed.
+
 ---
 </div>
 
