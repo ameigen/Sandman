@@ -7,13 +7,13 @@ use clap::Parser;
 use env_logger;
 use ignore::gitignore::Gitignore;
 use ignore::Error;
-use log::error;
+use log::{error, info};
 use sandman_share::config::{AwsConfig, Config};
+use sandman_share::consts::{SANDMAN_CONFIG, SANDMAN_HISTORY, SANDMAN_IGNORE};
+use sandman_share::paths::{config_dir, verify_config_existence};
+use std::ffi::OsString;
 use std::fs;
-
-pub const SANDMAN_HISTORY: &str = ".sandman_history";
-pub const SANDMAN_CONFIG: &str = ".sandman_config.toml";
-pub const SANDMAN_IGNORE: &str = ".sandmanignore";
+use std::path::PathBuf;
 
 /// Creates a `Gitignore` file matcher from the provided path. If an error occurs it will
 /// return a default match accepting any and all files
@@ -69,10 +69,24 @@ async fn gather(gather_args: GatherArgs, aws_config: Option<AwsConfig>) {
 }
 
 /// Opens and processes the `sandman_config.toml` file into a `Config` struct
-fn get_config() -> Config {
-    let config_string: String = fs::read_to_string(format!("./{}", SANDMAN_CONFIG))
-        .unwrap_or_else(|_e| panic!("Error while processing .sandman_config.toml"));
-    toml::from_str(&config_string).unwrap()
+fn get_config(path: String) -> Config {
+    let path: PathBuf = PathBuf::from(path);
+    let config_string: String = match path.is_file() {
+        true => fs::read_to_string(path)
+            .unwrap_or_else(|e| panic!("Error while processing .sandman_config.toml {}", e)),
+        false => {
+            let default_path: OsString = config_dir();
+            let default_file: &PathBuf = &PathBuf::from(default_path).join(SANDMAN_CONFIG);
+            info!(
+                "Unable to find `{}` checking system default `{:?}",
+                SANDMAN_CONFIG, default_file
+            );
+            fs::read_to_string(default_file)
+                .unwrap_or_else(|e| panic!("Error while processing {:?}: {}", default_file, e))
+        }
+    };
+    toml::from_str(&config_string)
+        .unwrap_or_else(|e| panic!("Error while processing {}: {}", SANDMAN_CONFIG, e))
 }
 
 /// Use the `verbosity` parameter of the `args` struct to determine the level of our logger.
@@ -84,35 +98,53 @@ fn set_loggers(verbosity: bool) {
     }
 }
 
+/// Runs Sandman with an external `.sandman_config.toml` file passed with `Args`. If the path does
+/// not exist or was left blank it will check in the default system location. In the case of the
+/// directory or file not existing it will be created and the application will exit.
+///
+/// # Arguments
+///
+/// * `args` - `Args` used to get the configuration path
+async fn with_external_config(args: Args) {
+    verify_config_existence();
+    let config: Config = get_config(args.config_path);
+    for directory in config.directories.backups {
+        let aws_config: AwsConfig = config.aws.clone();
+        let ignore_file_path = format!("{}/{}", directory.directory, SANDMAN_IGNORE);
+        let gather_args: GatherArgs = GatherArgs::new(
+            directory.directory,
+            ignore_file_path,
+            directory.bucket,
+            directory.prefix,
+        );
+        gather(gather_args, Some(aws_config)).await;
+    }
+}
+
+/// Runs Sandman with provided CLI arguments in the form of an `Args` struct
+///
+/// # Arguments
+///
+/// * `args` - `Args` built from the CLI parameters
+async fn with_cli_args(args: Args) {
+    let ignore_file_path = if args.ignore_file.is_empty() {
+        format!("{}/{}", args.local_directory, SANDMAN_IGNORE)
+    } else {
+        args.ignore_file.clone()
+    };
+    let gather_args: GatherArgs = GatherArgs::new(
+        args.local_directory,
+        ignore_file_path,
+        args.s3_bucket,
+        args.bucket_prefix,
+    );
+    gather(gather_args, None).await;
+}
+
 /// Main entry point for running the Sandman application.
 pub(crate) async fn run_sandman() {
     let args = Args::parse();
     set_loggers(args.verbosity);
-    if args.with_config {
-        let config: Config = get_config();
-        for directory in config.directories.backups {
-            let aws_config: AwsConfig = config.aws.clone();
-            let ignore_file_path = format!("{}/{}", directory.directory, SANDMAN_IGNORE);
-            let gather_args: GatherArgs = GatherArgs::new(
-                directory.directory,
-                ignore_file_path,
-                directory.bucket,
-                directory.prefix,
-            );
-            gather(gather_args, Some(aws_config)).await;
-        }
-    } else {
-        let ignore_file_path = if args.ignore_file.is_empty() {
-            format!("{}/{}", args.local_directory, SANDMAN_IGNORE)
-        } else {
-            args.ignore_file.clone()
-        };
-        let gather_args: GatherArgs = GatherArgs::new(
-            args.local_directory,
-            ignore_file_path,
-            args.s3_bucket,
-            args.bucket_prefix,
-        );
-        gather(gather_args, None).await;
-    }
+    if args.with_config { with_external_config(args).await; }
+    else { with_cli_args(args).await; }
 }
