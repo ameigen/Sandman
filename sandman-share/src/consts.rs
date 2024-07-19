@@ -1,4 +1,3 @@
-
 pub const SANDMAN_HISTORY: &str = ".sandman_history";
 pub const SANDMAN_CONFIG: &str = ".sandman_config.toml";
 pub const SANDMAN_IGNORE: &str = ".sandmanignore";
@@ -14,3 +13,9 @@ aws_secret_access_key = "IN+QrCGXy705CUACVNhQeZsY5FzFiBrJQ3bouNIy"
 backups = [
     {directory="./sandman", prefix="NightlyBackup", bucket="rust-bucket-test-test-test"},
 ]"#;
+
+pub(crate) static BASE_GLOBAL_IGNORE: &str = r#"
+.sandman_history
+.sandman_config.toml
+.sandmanignore
+"#;

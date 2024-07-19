@@ -1,9 +1,11 @@
+use crate::args::GatherArgs;
 use crate::sha::ShaFile;
 use chrono::prelude::*;
 use log::debug;
 use log::error;
-use rusoto_core::{HttpClient, Region};
-use rusoto_s3::{PutObjectRequest, S3Client, StreamingBody, S3};
+use rusoto_core::{HttpClient, Region, RusotoError};
+use rusoto_s3::PutObjectError;
+use rusoto_s3::{PutObjectOutput, PutObjectRequest, S3Client, StreamingBody, S3};
 use sandman_share::config::AwsConfig;
 use std::error::Error;
 use std::str::FromStr;
@@ -15,8 +17,7 @@ use tokio::io::AsyncReadExt;
 /// # Arguments
 ///
 /// * `diff` - A `ShaFile` representing the differences in files.
-/// * `bucket` - The name of the S3 bucket to upload to.
-/// * `bucket_directory` - The directory within the S3 bucket to upload to.
+/// * `args` - GatherArgs carrying the target bucket location for backup.
 /// * `credentials` - Optional AWS credentials configuration.
 ///
 /// # Returns
@@ -24,15 +25,14 @@ use tokio::io::AsyncReadExt;
 /// A `Result` which is `Ok` if the backup was successful, or an error if it failed.
 pub(crate) async fn backup(
     diff: ShaFile,
-    bucket: String,
-    bucket_directory: String,
+    args: &GatherArgs,
     credentials: Option<AwsConfig>,
 ) -> Result<(), Box<dyn Error>> {
     let now: DateTime<Utc> = Utc::now();
     let formatted_time = now.format("--%Y-%m-%d--%H-%M-%S").to_string();
 
     // Create the S3 client using provided credentials or default region
-    let client = match credentials {
+    let client: S3Client = match credentials {
         None => S3Client::new(Region::UsEast1),
         Some(credentials) => {
             let region: Region =
@@ -43,15 +43,18 @@ pub(crate) async fn backup(
 
     // Iterate over the files in the SHA file difference and upload them to S3
     for (file_path, _) in diff.files {
-        let bucket_location = format!("{}{}/{}", bucket_directory, formatted_time, file_path);
+        let bucket_location: String = format!(
+            "{}/{}/{}/{}",
+            args.bucket, args.bucket_prefix, formatted_time, file_path
+        );
 
-        let mut file = File::open(&file_path).await?;
-        let mut buffer = Vec::new();
+        let mut file: File = File::open(&file_path).await?;
+        let mut buffer: Vec<u8> = Vec::new();
         file.read_to_end(&mut buffer).await?;
 
-        let upload_result = client
+        let upload_result: Result<PutObjectOutput, RusotoError<PutObjectError>> = client
             .put_object(PutObjectRequest {
-                bucket: bucket.clone(),
+                bucket: args.bucket.clone(),
                 key: bucket_location.clone(),
                 body: Some(StreamingBody::from(buffer)),
                 ..Default::default()

@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
 use std::string::String;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -99,7 +100,7 @@ pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_fi
 /// # Returns
 ///
 /// A `ShaFile` instance with the previously stored SHA information.
-pub(crate) fn get_prior_shas(sha_location: &String) -> ShaFile {
+pub(crate) fn get_prior_shas(sha_location: &PathBuf) -> ShaFile {
     match fs::read_to_string(sha_location) {
         Ok(json) => serde_json::from_str(&json).expect("Unable to deserialize ShaFile"),
         Err(e) => {
@@ -154,7 +155,7 @@ pub(crate) fn merge_diff_old(mut old: ShaFile, new: &ShaFile) -> ShaFile {
 ///
 /// * `shas` - The `ShaFile` containing SHA information.
 /// * `output_path` - The file path to write the SHA file to.
-pub(crate) fn write_file_shas(shas: &ShaFile, output_path: &String) {
+pub(crate) fn write_file_shas(shas: &ShaFile, output_path: &PathBuf) {
     let shas_json = serde_json::to_string_pretty(shas).expect("Failed to serialize ShaFile");
     fs::write(output_path, shas_json).expect("Failed to write ShaFile");
 }

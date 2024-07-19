@@ -5,15 +5,14 @@ use crate::sha::{
 };
 use clap::Parser;
 use env_logger;
-use ignore::gitignore::Gitignore;
-use ignore::Error;
+use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use log::{error, info};
 use sandman_share::config::{AwsConfig, Config};
 use sandman_share::consts::{SANDMAN_CONFIG, SANDMAN_HISTORY, SANDMAN_IGNORE};
-use sandman_share::paths::{config_dir, verify_config_existence};
-use std::ffi::OsString;
+use sandman_share::paths::{file_in_config, verify_config_existence};
+use std::ffi::OsStr;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Creates a `Gitignore` file matcher from the provided path. If an error occurs it will
 /// return a default match accepting any and all files
@@ -25,16 +24,18 @@ use std::path::PathBuf;
 /// # Returns
 ///
 /// `Gitignore` - glob matcher
-fn get_ignore(path: String) -> Gitignore {
-    let ignore_result: (Gitignore, Option<Error>) = Gitignore::new(path);
-    let ignore_error: Option<Error> = ignore_result.1;
-    match ignore_error {
-        None => ignore_result.0,
-        Some(e) => {
-            error!("Error processing ignore file: {}", e);
-            Gitignore::empty()
-        }
-    }
+fn get_ignore(dir: &String) -> Gitignore {
+    let path: &Path = Path::new(OsStr::new(&dir));
+    let file: PathBuf = path.join(SANDMAN_IGNORE);
+    let global_file: PathBuf = file_in_config(SANDMAN_IGNORE);
+
+    let mut builder: GitignoreBuilder = GitignoreBuilder::new(path);
+    builder.add(file);
+    builder.add(global_file);
+    builder.build().unwrap_or_else(|e| {
+        error!("Error processing ignore file: {}", e);
+        Gitignore::empty()
+    })
 }
 
 /// Gathers and processes SHA files, and performs backup.
@@ -43,10 +44,12 @@ fn get_ignore(path: String) -> Gitignore {
 ///
 /// * `gather_args` - Arguments for gathering and backing up.
 /// * `aws_config` - Optional AWS configuration.
-async fn gather(gather_args: GatherArgs, aws_config: Option<AwsConfig>) {
+async fn gather(gather_args: &GatherArgs, aws_config: Option<AwsConfig>) {
+    let directory: &PathBuf = &PathBuf::from(OsStr::new(&gather_args.local_directory));
+    let sha_location: &PathBuf = &directory.join(SANDMAN_HISTORY);
+    let ignore: Gitignore = get_ignore(&gather_args.local_directory);
     let mut current_file_shas: ShaFile = ShaFile::new();
-    let sha_location: String = format!("{}/{}", gather_args.local_directory, SANDMAN_HISTORY);
-    let ignore: Gitignore = get_ignore(gather_args.ignore_file);
+
     generate_shas(
         gather_args.local_directory.clone(),
         &mut current_file_shas,
@@ -58,14 +61,7 @@ async fn gather(gather_args: GatherArgs, aws_config: Option<AwsConfig>) {
     let merged_shas: ShaFile = merge_diff_old(old_file_shas, &sha_diff);
 
     write_file_shas(&merged_shas, &sha_location);
-    backup(
-        sha_diff,
-        gather_args.bucket,
-        gather_args.bucket_prefix,
-        aws_config,
-    )
-    .await
-    .unwrap()
+    backup(sha_diff, gather_args, aws_config).await.unwrap()
 }
 
 /// Opens and processes the `sandman_config.toml` file into a `Config` struct
@@ -75,8 +71,7 @@ fn get_config(path: String) -> Config {
         true => fs::read_to_string(path)
             .unwrap_or_else(|e| panic!("Error while processing .sandman_config.toml {}", e)),
         false => {
-            let default_path: OsString = config_dir();
-            let default_file: &PathBuf = &PathBuf::from(default_path).join(SANDMAN_CONFIG);
+            let default_file: &PathBuf = &file_in_config(SANDMAN_CONFIG);
             info!(
                 "Unable to find `{}` checking system default `{:?}",
                 SANDMAN_CONFIG, default_file
@@ -105,19 +100,14 @@ fn set_loggers(verbosity: bool) {
 /// # Arguments
 ///
 /// * `args` - `Args` used to get the configuration path
-async fn with_external_config(args: Args) {
+async fn with_external_config(args: &Args) {
     verify_config_existence();
-    let config: Config = get_config(args.config_path);
+    let config: Config = get_config(args.config_path.clone());
     for directory in config.directories.backups {
         let aws_config: AwsConfig = config.aws.clone();
-        let ignore_file_path = format!("{}/{}", directory.directory, SANDMAN_IGNORE);
-        let gather_args: GatherArgs = GatherArgs::new(
-            directory.directory,
-            ignore_file_path,
-            directory.bucket,
-            directory.prefix,
-        );
-        gather(gather_args, Some(aws_config)).await;
+        let gather_args: GatherArgs =
+            GatherArgs::new(directory.directory, directory.bucket, directory.prefix);
+        gather(&gather_args, Some(aws_config)).await;
     }
 }
 
@@ -126,19 +116,13 @@ async fn with_external_config(args: Args) {
 /// # Arguments
 ///
 /// * `args` - `Args` built from the CLI parameters
-async fn with_cli_args(args: Args) {
-    let ignore_file_path = if args.ignore_file.is_empty() {
-        format!("{}/{}", args.local_directory, SANDMAN_IGNORE)
-    } else {
-        args.ignore_file.clone()
-    };
+async fn with_cli_args(args: &Args) {
     let gather_args: GatherArgs = GatherArgs::new(
-        args.local_directory,
-        ignore_file_path,
-        args.s3_bucket,
-        args.bucket_prefix,
+        args.local_directory.clone(),
+        args.s3_bucket.clone(),
+        args.bucket_prefix.clone(),
     );
-    gather(gather_args, None).await;
+    gather(&gather_args, None).await;
 }
 
 /// Main entry point for running the Sandman application.
@@ -146,8 +130,8 @@ pub(crate) async fn run_sandman() {
     let args = Args::parse();
     set_loggers(args.verbosity);
     if args.with_config {
-        with_external_config(args).await;
+        with_external_config(&args).await;
     } else {
-        with_cli_args(args).await;
+        with_cli_args(&args).await;
     }
 }

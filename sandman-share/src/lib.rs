@@ -1,3 +1,3 @@
 pub mod config;
-pub mod paths;
 pub mod consts;
+pub mod paths;
