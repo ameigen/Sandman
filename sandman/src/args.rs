@@ -32,18 +32,29 @@ pub(crate) struct Args {
     pub(crate) config_path: String,
 }
 
+#[derive(Clone)]
 pub(crate) struct GatherArgs {
     pub(crate) local_directory: String,
     pub(crate) bucket: String,
     pub(crate) bucket_prefix: String,
+    pub(crate) interval: u64,
+    pub(crate) start_time: u64,
 }
 
 impl GatherArgs {
-    pub(crate) fn new(local_directory: String, bucket: String, bucket_prefix: String) -> Self {
+    pub(crate) fn new(
+        local_directory: String,
+        bucket: String,
+        bucket_prefix: String,
+        interval: u64,
+        start_time: u64,
+    ) -> Self {
         GatherArgs {
             local_directory,
             bucket,
             bucket_prefix,
+            interval,
+            start_time,
         }
     }
 }

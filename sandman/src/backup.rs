@@ -26,7 +26,8 @@ use tokio::io::AsyncReadExt;
 pub(crate) async fn backup(
     diff: ShaFile,
     args: &GatherArgs,
-    credentials: Option<AwsConfig>,
+    credentials: &Option<AwsConfig>,
+    uuid: &String,
 ) -> Result<(), Box<dyn Error>> {
     let now: DateTime<Utc> = Utc::now();
     let formatted_time = now.format("--%Y-%m-%d--%H-%M-%S").to_string();
@@ -37,7 +38,7 @@ pub(crate) async fn backup(
         Some(credentials) => {
             let region: Region =
                 Region::from_str(&credentials.aws_default_region).expect("Invalid region string");
-            S3Client::new_with(HttpClient::new().unwrap(), credentials, region)
+            S3Client::new_with(HttpClient::new().unwrap(), credentials.clone(), region)
         }
     };
 
@@ -62,8 +63,14 @@ pub(crate) async fn backup(
             .await;
 
         match upload_result {
-            Ok(_) => debug!("Successfully uploaded: {}", bucket_location),
-            Err(e) => error!("Error uploading {}: {}", bucket_location, e),
+            Ok(_) => debug!(
+                "[Gatherer - {uuid}] Successfully uploaded: {}",
+                bucket_location
+            ),
+            Err(e) => error!(
+                "[Gatherer - {uuid}] Error uploading {}: {}",
+                bucket_location, e
+            ),
         }
     }
 

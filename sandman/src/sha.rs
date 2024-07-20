@@ -13,7 +13,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone)]
 pub(crate) struct ShaFile {
     pub(crate) files: HashMap<String, String>,
-    pub(crate) timestamp: u128,
+    pub(crate) timestamp: u64,
 }
 
 impl ShaFile {
@@ -23,7 +23,7 @@ impl ShaFile {
         let timestamp = start
             .duration_since(UNIX_EPOCH)
             .expect("System time is before Unix epoch")
-            .as_millis();
+            .as_secs();
 
         ShaFile {
             files: HashMap::new(),
@@ -67,7 +67,9 @@ pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_fi
 
         let is_dir: bool = path.is_dir();
 
-        if let Match::Ignore(_) = ignore_file.matched(&*path, is_dir) { continue; }
+        if let Match::Ignore(_) = ignore_file.matched(&*path, is_dir) {
+            continue;
+        }
 
         if is_dir {
             generate_shas(path_str, sha_file, ignore_file);
@@ -143,6 +145,7 @@ pub(crate) fn merge_diff_old(mut old: ShaFile, new: &ShaFile) -> ShaFile {
     for (k, v) in &new.files {
         old.files.insert(k.clone(), v.clone());
     }
+    old.timestamp = new.timestamp;
     old
 }
 

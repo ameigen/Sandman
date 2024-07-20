@@ -27,6 +27,8 @@ pub struct SandmanConfigApp {
     directory_entry: String,
     prefix_entry: String,
     bucket_entry: String,
+    interval_entry: String,
+    start_entry: String,
 }
 
 fn on_secret_id_set(value: String) -> Message {
@@ -62,6 +64,8 @@ impl Sandbox for SandmanConfigApp {
             directory_entry: "".to_string(),
             prefix_entry: "".to_string(),
             bucket_entry: "".to_string(),
+            interval_entry: "".to_string(),
+            start_entry: "".to_string(),
         }
     }
 
@@ -73,7 +77,6 @@ impl Sandbox for SandmanConfigApp {
     }
 
     fn update(&mut self, message: Self::Message) {
-        println!("{:?}", message);
         match message {
             Message::InputChanged(input, value) => match input {
                 Inputs::AccessKey => self.aws_access_key_id = value,
@@ -88,6 +91,8 @@ impl Sandbox for SandmanConfigApp {
                     directory: self.directory_entry.clone(),
                     prefix: self.prefix_entry.clone(),
                     bucket: self.bucket_entry.clone(),
+                    interval: self.interval_entry.clone().parse().unwrap(),
+                    start_time: self.start_entry.clone().parse().unwrap(),
                 };
                 self.directories.push(dir);
             }
@@ -145,11 +150,7 @@ fn entry_with_title(
     .into()
 }
 
-fn directory_entry(
-    directory: &str,
-    prefix: &str,
-    bucket: &str,
-) -> Element<'static, Message> {
+fn directory_entry(directory: &str, prefix: &str, bucket: &str) -> Element<'static, Message> {
     container::Container::new(
         row!(
             entry_with_title("Directory", directory, on_directory_set),

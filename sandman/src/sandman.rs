@@ -11,7 +11,12 @@ use sandman_share::consts::{SANDMAN_CONFIG, SANDMAN_HISTORY, SANDMAN_IGNORE};
 use sandman_share::paths::{file_in_config, verify_config_existence};
 use std::ffi::OsStr;
 use std::fs;
+use std::ops::Add;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tokio::task::JoinHandle;
+use uuid::Uuid;
 
 /// Creates a `Gitignore` file matcher from the provided path. If an error occurs it will
 /// return a default match accepting any and all files
@@ -43,24 +48,76 @@ fn get_ignore(dir: &String) -> Gitignore {
 ///
 /// * `gather_args` - Arguments for gathering and backing up.
 /// * `aws_config` - Optional AWS configuration.
-async fn gather(gather_args: &GatherArgs, aws_config: Option<AwsConfig>) {
+/// * `oneshot` - bool flag indicating whether the function should return after one run
+/// * `exit_flag` - Optional bool used as a signal for when the function should exit
+async fn start_gathering(
+    gather_args: GatherArgs,
+    aws_config: Option<AwsConfig>,
+    oneshot: bool,
+    exit_flag: Option<Arc<Mutex<bool>>>,
+) {
+    let uuid: String = Uuid::new_v4().to_string();
+    if oneshot {
+        gather(&uuid, &gather_args, &aws_config).await;
+    } else if exit_flag.is_some() {
+        info!(
+            "[Gatherer - {uuid}] Starting to watch for backup with {} - every {}s",
+            gather_args.local_directory, gather_args.interval
+        );
+        let exit = exit_flag.unwrap();
+        loop {
+            let can_exit: bool = *exit.lock().unwrap();
+            if can_exit {
+                return;
+            };
+            gather(&uuid, &gather_args, &aws_config).await;
+            async_std::task::sleep(Duration::from_secs(1)).await;
+        }
+    }
+}
+
+async fn gather(uuid: &String, gather_args: &GatherArgs, aws_config: &Option<AwsConfig>) {
     let directory: &PathBuf = &PathBuf::from(OsStr::new(&gather_args.local_directory));
     let sha_location: &PathBuf = &directory.join(SANDMAN_HISTORY);
-    let ignore: Gitignore = get_ignore(&gather_args.local_directory);
-    let mut current_file_shas: ShaFile = ShaFile::new();
-
-    generate_shas(
-        gather_args.local_directory.clone(),
-        &mut current_file_shas,
-        &ignore,
-    );
-
     let old_file_shas: ShaFile = get_prior_shas(sha_location);
-    let sha_diff: ShaFile = get_sha_diff(&old_file_shas, current_file_shas);
-    let merged_shas: ShaFile = merge_diff_old(old_file_shas, &sha_diff);
+    let now: Duration = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("SystemTime before UNIX EPOCH!");
+    let interval_duration: Duration = Duration::from_secs(gather_args.interval);
+    let last_time: Duration = Duration::from_secs(old_file_shas.timestamp);
+    let time_since: Duration = now - last_time;
 
-    write_file_shas(&merged_shas, sha_location);
-    backup(sha_diff, gather_args, aws_config).await.unwrap()
+    info!(
+        "{:?} {:?} {:?} {}",
+        now, last_time, time_since, gather_args.interval
+    );
+    if time_since >= Duration::from_secs(gather_args.interval) {
+        info!(
+            "[Gatherer - {uuid} ] Ready for backup...of {}",
+            gather_args.local_directory
+        );
+        let ignore: Gitignore = get_ignore(&gather_args.local_directory);
+        let mut current_file_shas: ShaFile = ShaFile::new();
+        generate_shas(
+            gather_args.local_directory.clone(),
+            &mut current_file_shas,
+            &ignore,
+        );
+
+        let sha_diff: ShaFile = get_sha_diff(&old_file_shas, current_file_shas);
+        let merged_shas: ShaFile = merge_diff_old(old_file_shas, &sha_diff);
+        write_file_shas(&merged_shas, sha_location);
+        backup(sha_diff, gather_args, aws_config, uuid)
+            .await
+            .unwrap()
+    } else {
+        let wait_time: Duration = interval_duration - time_since;
+        info!(
+            "[Gatherer - {uuid}] Not ready for backup sleeping for {:?} seconds...",
+            wait_time
+        );
+        async_std::task::sleep(wait_time).await;
+    }
 }
 
 /// Opens and processes the `sandman_config.toml` file into a `Config` struct
@@ -101,12 +158,29 @@ fn set_loggers(verbosity: bool) {
 /// * `args` - `Args` used to get the configuration path
 async fn with_external_config(args: &Args) {
     verify_config_existence();
+    let exit: Option<Arc<Mutex<bool>>> = Some(Arc::new(Mutex::new(false)));
     let config: Config = get_config(args.config_path.clone());
+    let mut gatherers: Vec<JoinHandle<()>> = vec![];
+
     for directory in config.directories.backups {
         let aws_config: AwsConfig = config.aws.clone();
-        let gather_args: GatherArgs =
-            GatherArgs::new(directory.directory, directory.bucket, directory.prefix);
-        gather(&gather_args, Some(aws_config)).await;
+        let gather_args: GatherArgs = GatherArgs::new(
+            directory.directory,
+            directory.bucket,
+            directory.prefix,
+            directory.interval,
+            directory.start_time,
+        );
+
+        gatherers.push(tokio::task::spawn(start_gathering(
+            gather_args,
+            Some(aws_config),
+            false,
+            exit.clone(),
+        )));
+    }
+    for gatherer in gatherers {
+        gatherer.await.expect("TODO: panic message");
     }
 }
 
@@ -120,8 +194,10 @@ async fn with_cli_args(args: &Args) {
         args.local_directory.clone(),
         args.s3_bucket.clone(),
         args.bucket_prefix.clone(),
+        0,
+        0,
     );
-    gather(&gather_args, None).await;
+    start_gathering(gather_args, None, true, None).await;
 }
 
 /// Main entry point for running the Sandman application.

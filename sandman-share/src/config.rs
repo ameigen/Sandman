@@ -51,6 +51,12 @@ pub struct SandmanDirectory {
     /// Path to the directory.
     pub directory: String,
 
+    /// Interval for backups
+    pub interval: u64,
+
+    /// Start time (unix timestamp)
+    pub start_time: u64,
+
     /// S3 bucket prefix for the backup.
     pub prefix: String,
 
