@@ -1,0 +1,14 @@
+[package]
+name = "sandman-share"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.204", features = ["derive"] }
+async-trait = "0.1.81"
+rusoto_core = "0.48.0"
+rusoto_sqs = "0.48.0"
+rusoto_credential = "0.48.0"
+rusoto_s3 = "0.48.0"
+directories = "5.0.1"
+log = "0.4.22"
