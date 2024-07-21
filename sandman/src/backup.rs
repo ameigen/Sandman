@@ -29,7 +29,7 @@ pub(crate) async fn backup(
     credentials: &Option<AwsConfig>,
 ) -> Result<(), Box<dyn Error>> {
     let now: DateTime<Utc> = Utc::now();
-    let formatted_time = now.format("--%Y-%m-%d--%H-%M-%S").to_string();
+    let formatted_time = now.format("%Y-%m-%d--%H-%M-%S").to_string();
 
     // Create the S3 client using provided credentials or default region
     let client: S3Client = match credentials {
@@ -44,8 +44,8 @@ pub(crate) async fn backup(
     // Iterate over the files in the SHA file difference and upload them to S3
     for (file_path, _) in diff.files {
         let bucket_location: String = format!(
-            "{}/{}/{}/{}",
-            args.bucket, args.bucket_prefix, formatted_time, file_path
+            "{}/{}/{}",
+            args.bucket_prefix, formatted_time, file_path
         );
 
         let mut file: File = File::open(&file_path).await?;

@@ -49,6 +49,7 @@ pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_fi
     };
 
     for entry in paths {
+        println!("{:?}", entry);
         let path = match entry {
             Ok(entry) => entry.path(),
             Err(e) => {
@@ -60,13 +61,12 @@ pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_fi
         let is_dir: bool = path.is_dir();
 
         let path_str = match path.to_str() {
-            Some(p) => p.to_string(),
+            Some(p) => p.to_string().replace("\\", "/"),
             None => {
                 error!("Invalid path: {:?}", path);
                 continue;
             }
         };
-
         if let Match::Ignore(_) = ignore_file.matched(&*path, is_dir) {
             continue;
         }
