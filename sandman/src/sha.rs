@@ -61,7 +61,7 @@ pub(crate) fn generate_shas(directory: String, sha_file: &mut ShaFile, ignore_fi
         let is_dir: bool = path.is_dir();
 
         let path_str = match path.to_str() {
-            Some(p) => p.to_string().replace("\\", "/"),
+            Some(p) => p.to_string().replace('\\', "/"),
             None => {
                 error!("Invalid path: {:?}", path);
                 continue;

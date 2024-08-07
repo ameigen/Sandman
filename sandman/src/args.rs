@@ -40,6 +40,7 @@ pub(crate) struct GatherArgs {
     pub(crate) bucket_prefix: String,
     pub(crate) interval: u64,
     pub(crate) start_time: u64,
+    pub(crate) cleanable: bool
 }
 
 impl GatherArgs {
@@ -50,6 +51,7 @@ impl GatherArgs {
         bucket_prefix: String,
         interval: u64,
         start_time: u64,
+        cleanable: bool,
     ) -> Self {
         GatherArgs {
             name,
@@ -58,6 +60,7 @@ impl GatherArgs {
             bucket_prefix,
             interval,
             start_time,
+            cleanable,
         }
     }
 }
