@@ -5,7 +5,7 @@ use crate::sha::{
 };
 use ignore::gitignore::Gitignore;
 use log::info;
-use sandman_share::config::AwsConfig;
+use sandman_share::config::{AwsConfig, SandmanUploadedFile};
 use sandman_share::consts::SANDMAN_HISTORY;
 use std::ffi::OsStr;
 use std::path::PathBuf;
@@ -72,6 +72,9 @@ async fn start_gathering(
     }
 }
 
+async fn cleanup_deletables(gather_args: &GatherArgs, uploaded_files: &[SandmanUploadedFile]) {
+}
+
 async fn gather(gather_args: &GatherArgs, aws_config: &Option<AwsConfig>) {
     let directory: &PathBuf = &PathBuf::from(OsStr::new(&gather_args.local_directory));
     let sha_location: &PathBuf = &directory.join(SANDMAN_HISTORY);
@@ -108,5 +111,7 @@ async fn gather(gather_args: &GatherArgs, aws_config: &Option<AwsConfig>) {
     let sha_diff: ShaFile = get_sha_diff(&old_file_shas, current_file_shas);
     let merged_shas: ShaFile = merge_diff_old(old_file_shas, &sha_diff);
     write_file_shas(&merged_shas, sha_location);
-    backup(sha_diff, gather_args, aws_config).await.unwrap()
+
+    let uploaded_files: Vec<SandmanUploadedFile> = backup(sha_diff, gather_args, aws_config).await.unwrap();
+    cleanup_deletables(gather_args, &uploaded_files).await;
 }

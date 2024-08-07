@@ -86,6 +86,7 @@ async fn with_external_config(args: &Args) {
             directory.prefix,
             directory.interval,
             directory.start_time,
+            directory.cleanable
         );
 
         gatherers.push(Gatherer::new(gather_args, Some(aws_config)));
@@ -111,6 +112,7 @@ async fn with_cli_args(args: &Args) {
         args.bucket_prefix.clone(),
         0,
         0,
+        false
     );
     let mut gatherer: Gatherer = Gatherer::new(gather_args, None);
     gatherer.gather(true, None);
