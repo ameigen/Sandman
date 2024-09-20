@@ -94,6 +94,7 @@ impl Sandbox for SandmanConfigApp {
                     bucket: self.bucket_entry.clone(),
                     interval: self.interval_entry.clone().parse().unwrap(),
                     start_time: self.start_entry.clone().parse().unwrap(),
+                    cleanable: false,
                 };
                 self.directories.push(dir);
             }
