@@ -40,7 +40,7 @@ pub(crate) struct GatherArgs {
     pub(crate) bucket_prefix: String,
     pub(crate) interval: u64,
     pub(crate) start_time: u64,
-    pub(crate) cleanable: bool
+    pub(crate) cleanable: bool,
 }
 
 impl GatherArgs {

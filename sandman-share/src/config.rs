@@ -67,7 +67,7 @@ pub struct SandmanDirectory {
     pub bucket: String,
 
     /// Whether files in this directory should be deleted on a successful upload
-    pub cleanable: bool
+    pub cleanable: bool,
 }
 
 pub struct SandmanUploadedFile {
@@ -80,9 +80,6 @@ pub struct SandmanUploadedFile {
 
 impl SandmanUploadedFile {
     pub fn new(path: String, remote_name: String) -> Self {
-        return SandmanUploadedFile{
-            path,
-            remote_name
-        }
+        SandmanUploadedFile { path, remote_name }
     }
 }

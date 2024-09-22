@@ -46,10 +46,8 @@ pub(crate) async fn backup(
     let mut uploaded_files: Vec<SandmanUploadedFile> = vec![];
 
     for (file_path, _) in diff.files {
-        let bucket_location: String = format!(
-            "{}/{}/{}",
-            args.bucket_prefix, formatted_time, file_path
-        );
+        let bucket_location: String =
+            format!("{}/{}/{}", args.bucket_prefix, formatted_time, file_path);
 
         let mut file: File = File::open(&file_path).await?;
         let mut buffer: Vec<u8> = Vec::new();
@@ -65,12 +63,13 @@ pub(crate) async fn backup(
             .await;
 
         match upload_result {
-            Ok(_) => {debug!(
-                "[Gatherer - {}] Successfully uploaded: {}",
-                args.name, bucket_location
-            );
-            uploaded_files.push(SandmanUploadedFile::new(file_path, bucket_location))
-            },
+            Ok(_) => {
+                debug!(
+                    "[Gatherer - {}] Successfully uploaded: {}",
+                    args.name, bucket_location
+                );
+                uploaded_files.push(SandmanUploadedFile::new(file_path, bucket_location))
+            }
             Err(e) => error!(
                 "[Gatherer - {}] Error uploading {}: {}",
                 args.name, bucket_location, e
