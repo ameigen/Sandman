@@ -177,4 +177,5 @@ prefix = "ExampleBackup2"
 bucket = "our-bucket-name"
 interval = 180
 start_time = 0
+cleanable = true
 ```

@@ -6,7 +6,7 @@ use log::error;
 use rusoto_core::{HttpClient, Region, RusotoError};
 use rusoto_s3::PutObjectError;
 use rusoto_s3::{PutObjectOutput, PutObjectRequest, S3Client, StreamingBody, S3};
-use sandman_share::config::AwsConfig;
+use sandman_share::config::{AwsConfig, SandmanUploadedFile};
 use std::error::Error;
 use std::str::FromStr;
 use tokio::fs::File;
@@ -27,7 +27,7 @@ pub(crate) async fn backup(
     diff: ShaFile,
     args: &GatherArgs,
     credentials: &Option<AwsConfig>,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<Vec<SandmanUploadedFile>, Box<dyn Error>> {
     let now: DateTime<Utc> = Utc::now();
     let formatted_time = now.format("%Y-%m-%d--%H-%M-%S").to_string();
 
@@ -42,11 +42,12 @@ pub(crate) async fn backup(
     };
 
     // Iterate over the files in the SHA file difference and upload them to S3
+    // If a file is successfully uploaded store it's remote name and local file path
+    let mut uploaded_files: Vec<SandmanUploadedFile> = vec![];
+
     for (file_path, _) in diff.files {
-        let bucket_location: String = format!(
-            "{}/{}/{}",
-            args.bucket_prefix, formatted_time, file_path
-        );
+        let bucket_location: String =
+            format!("{}/{}/{}", args.bucket_prefix, formatted_time, file_path);
 
         let mut file: File = File::open(&file_path).await?;
         let mut buffer: Vec<u8> = Vec::new();
@@ -62,10 +63,13 @@ pub(crate) async fn backup(
             .await;
 
         match upload_result {
-            Ok(_) => debug!(
-                "[Gatherer - {}] Successfully uploaded: {}",
-                args.name, bucket_location
-            ),
+            Ok(_) => {
+                debug!(
+                    "[Gatherer - {}] Successfully uploaded: {}",
+                    args.name, bucket_location
+                );
+                uploaded_files.push(SandmanUploadedFile::new(file_path, bucket_location))
+            }
             Err(e) => error!(
                 "[Gatherer - {}] Error uploading {}: {}",
                 args.name, bucket_location, e
@@ -73,5 +77,5 @@ pub(crate) async fn backup(
         }
     }
 
-    Ok(())
+    Ok(uploaded_files)
 }

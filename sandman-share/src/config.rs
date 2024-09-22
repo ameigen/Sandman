@@ -65,4 +65,21 @@ pub struct SandmanDirectory {
 
     /// S3 bucket name for the backup.
     pub bucket: String,
+
+    /// Whether files in this directory should be deleted on a successful upload
+    pub cleanable: bool,
+}
+
+pub struct SandmanUploadedFile {
+    /// Local file path
+    pub path: String,
+
+    /// Remote name
+    pub remote_name: String,
+}
+
+impl SandmanUploadedFile {
+    pub fn new(path: String, remote_name: String) -> Self {
+        SandmanUploadedFile { path, remote_name }
+    }
 }
