@@ -3,6 +3,7 @@ use crate::backup::backup;
 use crate::sha::{
     generate_shas, get_prior_shas, get_sha_diff, merge_diff_old, write_file_shas, ShaFile,
 };
+use crate::sandman::get_ignore;
 use ignore::gitignore::Gitignore;
 use log::{error, info};
 use sandman_share::config::{AwsConfig, SandmanUploadedFile};
@@ -164,7 +165,7 @@ async fn gather(gather_args: &GatherArgs, aws_config: &Option<AwsConfig>) {
     let sha_location: &PathBuf = &directory.join(SANDMAN_HISTORY);
     let old_file_shas: ShaFile = get_prior_shas(sha_location);
     let last_time: Duration = Duration::from_secs(old_file_shas.timestamp);
-    let ignore: Gitignore = crate::sandman::get_ignore(&gather_args.local_directory);
+    let ignore: Gitignore = get_ignore(&gather_args.local_directory);
     let mut current_file_shas: ShaFile = ShaFile::new();
 
     check_start_time(gather_args).await;
